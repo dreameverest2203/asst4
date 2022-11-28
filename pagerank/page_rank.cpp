@@ -25,8 +25,11 @@ void pageRank(Graph g, double* solution, double damping, double convergence)
 
   int numNodes = num_nodes(g);
   double equal_prob = 1.0 / numNodes;
+  double* old_sol = new double[numNodes];
+  #pragma omp parallel for
   for (int i = 0; i < numNodes; ++i) {
     solution[i] = equal_prob;
+    old_sol[i] = equal_prob;
   }
   
   
@@ -58,4 +61,32 @@ void pageRank(Graph g, double* solution, double damping, double convergence)
      }
 
    */
+   double global_diff = 0.0;
+   double noedge = 0.0;
+   bool converged = false;
+   while(!converged) {
+      global_diff = 0.0;
+      noedge = 0.0;
+      #pragma omp parallel for reduction(+:noedge) schedule(dynamic, 256)
+      for(int i=0; i<numNodes; i++) {
+        const Vertex* start = incoming_begin(g, i);
+        const Vertex* end = incoming_end(g, i);
+        double sum = 0.f;
+        for (const Vertex* v=start; v!=end; v++) {
+          sum += (old_sol[*v]/outgoing_size(g,*v));
+        }
+        solution[i] = damping * sum + (1.0 - damping)/numNodes;
+        if(outgoing_size(g,i)==0) {
+          noedge += old_sol[i] / numNodes;
+        }
+      }
+      noedge *= damping;
+      #pragma omp parallel for reduction(+:global_diff)
+      for(int i = 0; i<numNodes; i++) {
+        solution[i] += noedge;
+        global_diff += std::abs(solution[i]-old_sol[i]);
+        old_sol[i] = solution[i];
+      }
+      converged = (global_diff < convergence);
+   }
 }
