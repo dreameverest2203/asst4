@@ -31,7 +31,7 @@ void top_down_step(
     vertex_set* new_frontier,
     int* distances)
 {
-
+    #pragma omp parallel for schedule(dynamic, 256)
     for (int i=0; i<frontier->count; i++) {
 
         int node = frontier->vertices[i];
@@ -44,10 +44,11 @@ void top_down_step(
         // attempt to add all neighbors to the new frontier
         for (int neighbor=start_edge; neighbor<end_edge; neighbor++) {
             int outgoing = g->outgoing_edges[neighbor];
-
             if (distances[outgoing] == NOT_VISITED_MARKER) {
                 distances[outgoing] = distances[node] + 1;
-                int index = new_frontier->count++;
+                int index;
+                #pragma omp atomic capture
+                index = new_frontier->count++;
                 new_frontier->vertices[index] = outgoing;
             }
         }
