@@ -37,11 +37,6 @@ void top_down_step(
     const int thread_id = omp_get_thread_num();
     vertex_set local_frontier;
     vertex_set_init(&local_frontier, g->num_nodes);
-    // vertex_set* current_frontier = new vertex_set[num_threads];
-    // for(int i = 0; i < num_threads; i++) {
-    //     current_frontier[i].max_vertices = g->num_nodes;
-    //     current_frontier[i].vertices = (int*)malloc(sizeof(int) * g->num_nodes);
-    // }
     #pragma omp for
     for (int i=0; i<frontier->count; i++) {
         
@@ -56,8 +51,6 @@ void top_down_step(
             int outgoing = g->outgoing_edges[neighbor];
             
             if (distances[outgoing] == NOT_VISITED_MARKER && __sync_bool_compare_and_swap(distances + outgoing, NOT_VISITED_MARKER, distances[node] + 1)) {
-                // distances[outgoing] = distances[node] + 1;
-                // current_frontier[thread_id].vertices[current_frontier[thread_id].count++] = outgoing;
                 local_frontier.vertices[local_frontier.count++] = outgoing;
             }
         }
@@ -70,62 +63,7 @@ void top_down_step(
         vertex_set_clear(&local_frontier); 
 
 }
-    // std::cout<<"here"<<std::endl;
-    // int* idx_start = new int[num_threads];
-    // int cnt = 0;
-    // for(int i = 0; i < num_threads; i++) {
-    //     idx_start[i] = cnt;
-    //     cnt += current_frontier[i].count;
-    // }   
-    // new_frontier->count = cnt;
-    
-    // #pragma omp for
-    // for(int i = 0; i < num_threads; i++) {
-    //     memcpy(new_frontier->vertices+idx_start[i], current_frontier[i].vertices, sizeof(int)*current_frontier[i].count);
-    // }
-    // delete current_frontier;
 }
-
-
-// void top_down_step(Graph g, vertex_set *frontier, vertex_set *new_frontier,
-//                    int *distances) {
-// #pragma omp parallel
-//   {
-//     int ID = omp_get_thread_num();
-//     int numThreads = omp_get_num_threads();
-
-//     // __thread vertex_set pt_frontier;
-//     vertex_set pt_frontier;
-//     vertex_set_init(&pt_frontier, g->num_nodes);
-
-//     for (int i = ID; i < frontier->count; i += numThreads) {
-//       int node = frontier->vertices[i];
-
-//       int start_edge = g->outgoing_starts[node];
-//       int end_edge = (node == g->num_nodes - 1) ? g->num_edges
-//                                                 : g->outgoing_starts[node + 1];
-
-//       // attempt to add all neighbors to the new frontier
-//       for (int neighbor = start_edge; neighbor < end_edge; neighbor++) {
-//         int outgoing = g->outgoing_edges[neighbor];
-//         if (distances[outgoing] == NOT_VISITED_MARKER && __sync_bool_compare_and_swap(distances + outgoing,
-//                                                                                       NOT_VISITED_MARKER,
-//                                                                                       distances[node] + 1)) {
-//           pt_frontier.vertices[pt_frontier.count++] = outgoing;
-//         }
-//       }
-//     }
-
-// #pragma omp critical
-//     {
-//       memcpy(new_frontier->vertices + new_frontier->count, pt_frontier.vertices, pt_frontier.count * sizeof(int));
-//       new_frontier->count += pt_frontier.count;
-//     }
-
-//     vertex_set_clear(&pt_frontier);
-//   }
-// }
-
 
 // Implements top-down BFS.
 //
