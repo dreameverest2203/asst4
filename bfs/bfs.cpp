@@ -207,8 +207,8 @@ void bfs_bottom_up(Graph graph, solution* sol)
     vertex_set* new_frontier = &list2;
     bool* old_frontier_bool = (bool*)malloc(sizeof(bool) * graph->num_nodes);
 
-    // initialize all nodes to NOT_VISITED
-    #pragma omp parallel for schedule(guided)
+    
+    #pragma omp parallel for
     for (int i=0; i<graph->num_nodes; i++){
         sol->distances[i] = NOT_VISITED_MARKER;
         old_frontier_bool[i] = true;
