@@ -346,23 +346,23 @@ void bfs_hybrid(Graph graph, solution* sol)
                 old_frontier_bool[new_frontier->vertices[i]] = false;
             }
 
-            // adjust the number maybe
-            if (frontier->count > 0 && graph->num_nodes/frontier->count > 200) {
-                top_down = true;
-                // run top down again to prepare for the new top down frontier
-                vertex_set_clear(new_frontier);
-                top_down_step(graph, frontier, new_frontier, sol->distances);
-                // swap pointers
-                vertex_set* tmp = frontier;
-                frontier = new_frontier;
-                new_frontier = tmp;
-            }
-            else {
-                // swap pointers
-                vertex_set* tmp = frontier;
-                frontier = new_frontier;
-                new_frontier = tmp;
-            }
+            // // adjust the number maybe
+            // if (frontier->count > 0 && graph->num_nodes/frontier->count > 200) {
+            //     top_down = true;
+            //     // run top down again to prepare for the new top down frontier
+            //     vertex_set_clear(new_frontier);
+            //     top_down_step(graph, frontier, new_frontier, sol->distances);
+            //     // swap pointers
+            //     vertex_set* tmp = frontier;
+            //     frontier = new_frontier;
+            //     new_frontier = tmp;
+            // }
+            // else {
+            //     // swap pointers
+            // }
+            vertex_set* tmp = frontier;
+            frontier = new_frontier;
+            new_frontier = tmp;
 
         }
     }
