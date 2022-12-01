@@ -254,4 +254,37 @@ void bfs_hybrid(Graph graph, solution* sol)
     //
     // You will need to implement the "hybrid" BFS here as
     // described in the handout.
+    bfs_bottom_up(Graph graph, solution* sol);
+
+    // Initialize variables for the top down and the bottom up approach
+    // generally bottom up approach is only advantageous when frontier
+    // constitutes substantial fraction of graph
+    // high performance BFS will use top-down approach for beginning and end of search
+    // use bottom up approach for middle steps when frontier is largest
+    // start with the top down approach
+    // bool top_down = true;
+
+    // const int num_nodes = graph->num_nodes;
+    // const int num_threads = omp_get_num_threads();
+    // const int thread_id = omp_get_thread_num();
+    
+    // int frontier_count = -1;
+
+    // // initialize variables specific to top down and bottom up
+
+    // while (frontier_count != 0) {
+    //     frontier_count = frontier->count;
+    //     if (top_down) {
+    //         // add code to run top down up here
+
+    //     }
+    //     else {
+    //         // add code to run bottom up here
+    //         //  we might not need to if top down approach is fast enough :)
+    //         ;
+    //     }
+    // }
+    
+
+
 }
