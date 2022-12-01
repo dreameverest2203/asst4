@@ -307,7 +307,7 @@ void bfs_hybrid(Graph graph, solution* sol)
             frontier = new_frontier;
             new_frontier = tmp;
             frontier_count = frontier->count;
-            if (frontier_count > 0 && graph->num_nodes/frontier_count < 100) {
+            if (frontier_count > 0 && graph->num_nodes/frontier_count < 50) {
                 top_down = false;
             }
 
@@ -327,6 +327,7 @@ void bfs_hybrid(Graph graph, solution* sol)
             // adjust the number maybe
             if (node_num > 0 ** graph->num_nodes/frontier_count > 200) {
                 top_down = true;
+                frontier_count = frontier->count;
             }
 
         }
