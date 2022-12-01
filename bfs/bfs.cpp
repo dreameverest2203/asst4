@@ -287,7 +287,7 @@ void bfs_hybrid(Graph graph, solution* sol)
     // high performance BFS will use top-down approach for beginning and end of search
     // use bottom up approach for middle steps when frontier is largest
     // start with the top down approach
-    bool top_down = false;
+    bool top_down = true;
     
     // initialize variables specific to top down and bottom up
     vertex_set list1;
@@ -316,12 +316,25 @@ void bfs_hybrid(Graph graph, solution* sol)
             vertex_set_clear(new_frontier);
             top_down_step(graph, frontier, new_frontier, sol->distances);
 
-            // swap pointers
-            vertex_set* tmp = frontier;
-            frontier = new_frontier;
-            new_frontier = tmp;
-            if (graph->num_nodes/frontier->count < 100 && frontier->count > 0) {
+            if (frontier->count > 0 && graph->num_nodes/frontier->count < 100) {
                 top_down = false;
+                // run bottom up on the current frontier again to set up for future bottom ups
+                vertex_set_clear(new_frontier);
+                bottom_up_step(graph, frontier, new_frontier, sol->distances, old_frontier_bool);
+                #pragma omp parallel for
+                for (int i=0; i<new_frontier->count; i++){
+                    old_frontier_bool[new_frontier->vertices[i]] = false;
+                }
+                // swap pointers
+                vertex_set* tmp = frontier;
+                frontier = new_frontier;
+                new_frontier = tmp;
+            }
+            else {
+                // swap pointers
+                vertex_set* tmp = frontier;
+                frontier = new_frontier;
+                new_frontier = tmp;
             }
 
         }
@@ -333,13 +346,22 @@ void bfs_hybrid(Graph graph, solution* sol)
                 old_frontier_bool[new_frontier->vertices[i]] = false;
             }
 
-            // swap pointers
-            vertex_set* tmp = frontier;
-            frontier = new_frontier;
-            new_frontier = tmp;
             // adjust the number maybe
-            if (graph->num_nodes/frontier->count > 200 && frontier->count > 0) {
-                top_down = false;
+            if (frontier->count > 0 && graph->num_nodes/frontier->count > 200) {
+                top_down = true;
+                // run top down again to prepare for the new top down frontier
+                vertex_set_clear(new_frontier);
+                top_down_step(graph, frontier, new_frontier, sol->distances);
+                // swap pointers
+                vertex_set* tmp = frontier;
+                frontier = new_frontier;
+                new_frontier = tmp;
+            }
+            else {
+                // swap pointers
+                vertex_set* tmp = frontier;
+                frontier = new_frontier;
+                new_frontier = tmp;
             }
 
         }
