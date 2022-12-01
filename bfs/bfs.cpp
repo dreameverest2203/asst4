@@ -318,17 +318,6 @@ void bfs_hybrid(Graph graph, solution* sol)
 
             if (frontier->count > 0 && graph->num_nodes/frontier->count < 100) {
                 top_down = false;
-                // run bottom up on the current frontier again to set up for future bottom ups
-                vertex_set_clear(new_frontier);
-                bottom_up_step(graph, frontier, new_frontier, sol->distances, old_frontier_bool);
-                #pragma omp parallel for
-                for (int i=0; i<new_frontier->count; i++){
-                    old_frontier_bool[new_frontier->vertices[i]] = false;
-                }
-                // swap pointers
-                vertex_set* tmp = frontier;
-                frontier = new_frontier;
-                new_frontier = tmp;
             }
             else {
                 // swap pointers
@@ -349,13 +338,6 @@ void bfs_hybrid(Graph graph, solution* sol)
             // adjust the number maybe
             if (frontier->count > 0 && graph->num_nodes/frontier->count > 200) {
                 top_down = true;
-                // run top down again to prepare for the new top down frontier
-                vertex_set_clear(new_frontier);
-                top_down_step(graph, frontier, new_frontier, sol->distances);
-                // swap pointers
-                vertex_set* tmp = frontier;
-                frontier = new_frontier;
-                new_frontier = tmp;
             }
             else {
                 // swap pointers
