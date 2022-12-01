@@ -35,30 +35,48 @@ void top_down_step(
     vertex_set* new_frontier,
     int* distances)
 {
+    // spawning an amount of threads
+    // each thread will have info about num threads, thread num, and local frontier
+    // parallelizing across vertexes in the current frontier
+    // each thread's view of the current frontier is just one vertex
 #pragma omp parallel 
 {
     const int num_threads = omp_get_num_threads();
     const int thread_id = omp_get_thread_num();
     vertex_set local_frontier;
+    // reset and initialize vertex set
     vertex_set_init(&local_frontier, g->num_nodes);
     #pragma omp for
+    // given a current frontier
     for (int i=0; i<frontier->count; i++) {
-        
+        // iterate through all of the vertices associated with the frontier
         int node = frontier->vertices[i];
+        // set the indices of edges for a particular node
         int start_edge = g->outgoing_starts[node];
         int end_edge = (node == g->num_nodes - 1)
                             ? g->num_edges
                             : g->outgoing_starts[node + 1];
 
         // attempt to add all neighbors to the new frontier
+        // vertex in current frontier -> consider all outgoing edges
+        // check the outgoing edge from that node -> reach a new vertex
+        // that new vertex is a candidate to be pushed to the new frontier (maybe)
         for (int neighbor=start_edge; neighbor<end_edge; neighbor++) {
             int outgoing = g->outgoing_edges[neighbor];
             
+            // is the new node (outgoing node) -> whether it has been visited or not
+            // sync bool: 3 arguments, atomic
+            // first argument: distance + outgoing -> address, value of distances of outgoing
+            // second argument: check if first argument is equal to not visited marker
+            // third argument: set the value of distance outgoing to distances[node] + 1
+            // distances is a shared variable -> shared by all the threads
+            // local frontier is the new frontier that we are building
             if (distances[outgoing] == NOT_VISITED_MARKER && __sync_bool_compare_and_swap(distances + outgoing, NOT_VISITED_MARKER, distances[node] + 1)) {
                 local_frontier.vertices[local_frontier.count++] = outgoing;
             }
         }
     }
+    // memcpy accumulates into one central location
     #pragma omp critical 
         {
             memcpy(new_frontier->vertices + new_frontier->count, local_frontier.vertices, sizeof(int)*local_frontier.count);
@@ -150,6 +168,8 @@ void bottom_up_step(
     int* distances,
     bool* old_frontier_bool)
 {
+    // bottom up is different because we are building the new frontier from the bottom up
+    // check every vertex in the graph whether it shares an incoming edge from the current frontier
 #pragma omp parallel
 {
     const int n_threads = omp_get_num_threads();
@@ -205,6 +225,10 @@ void bfs_bottom_up(Graph graph, solution* sol)
 
     vertex_set* frontier = &list1;
     vertex_set* new_frontier = &list2;
+    // want to have a check of whether or not the current vertex is in the current frontier or new frontier
+    // since we are iterating through all the vertexes in the graph, 
+    // parallelizing through all vertexes in the graph
+    // helps ignore all vertexes in the current frontier
     bool* old_frontier_bool = (bool*)malloc(sizeof(bool) * graph->num_nodes);
 
     // initialize all nodes to NOT_VISITED
@@ -229,6 +253,7 @@ void bfs_bottom_up(Graph graph, solution* sol)
 
         bottom_up_step(graph, frontier, new_frontier, sol->distances, old_frontier_bool);
 
+        // after every bottom up step, we set all booleans
         #pragma omp parallel for
         for (int i=0; i<new_frontier->count; i++){
             old_frontier_bool[new_frontier->vertices[i]] = false;
@@ -289,15 +314,14 @@ void bfs_hybrid(Graph graph, solution* sol)
     while (frontier->count != 0) {
         if (top_down) {
             vertex_set_clear(new_frontier);
-
             top_down_step(graph, frontier, new_frontier, sol->distances);
 
             // swap pointers
             vertex_set* tmp = frontier;
             frontier = new_frontier;
             new_frontier = tmp;
-            if (frontier->count > 0 && graph->num_nodes/frontier->count < 100) {
-                top_down = false;
+            if (graph->num_nodes/frontier->count < 100 && frontier->count > 0) {
+                top_down = true;
             }
 
         }
@@ -315,7 +339,7 @@ void bfs_hybrid(Graph graph, solution* sol)
             frontier = new_frontier;
             new_frontier = tmp;
             // adjust the number maybe
-            if (frontier->count > 0 && graph->num_nodes/frontier->count > 200) {
+            if (graph->num_nodes/frontier->count > 200 && frontier->count > 0) {
                 top_down = true;
             }
 
