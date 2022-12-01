@@ -287,7 +287,7 @@ void bfs_hybrid(Graph graph, solution* sol)
     // high performance BFS will use top-down approach for beginning and end of search
     // use bottom up approach for middle steps when frontier is largest
     // start with the top down approach
-    bool top_down = true;
+    bool top_down = false;
     
     // initialize variables specific to top down and bottom up
     vertex_set list1;
@@ -317,7 +317,7 @@ void bfs_hybrid(Graph graph, solution* sol)
             top_down_step(graph, frontier, new_frontier, sol->distances);
 
             if (frontier->count > 0 && graph->num_nodes/frontier->count < 100) {
-                top_down = false;
+                top_down = true;
                 // run bottom up on the current frontier again to set up for future bottom ups
                 vertex_set_clear(new_frontier);
                 bottom_up_step(graph, frontier, new_frontier, sol->distances, old_frontier_bool);
@@ -346,23 +346,23 @@ void bfs_hybrid(Graph graph, solution* sol)
                 old_frontier_bool[new_frontier->vertices[i]] = false;
             }
 
-            // // adjust the number maybe
-            // if (frontier->count > 0 && graph->num_nodes/frontier->count > 200) {
-            //     top_down = true;
-            //     // run top down again to prepare for the new top down frontier
-            //     vertex_set_clear(new_frontier);
-            //     top_down_step(graph, frontier, new_frontier, sol->distances);
-            //     // swap pointers
-            //     vertex_set* tmp = frontier;
-            //     frontier = new_frontier;
-            //     new_frontier = tmp;
-            // }
-            // else {
-            //     // swap pointers
-            // }
-            vertex_set* tmp = frontier;
-            frontier = new_frontier;
-            new_frontier = tmp;
+            // adjust the number maybe
+            if (frontier->count > 0 && graph->num_nodes/frontier->count > 200) {
+                top_down = true;
+                // run top down again to prepare for the new top down frontier
+                vertex_set_clear(new_frontier);
+                top_down_step(graph, frontier, new_frontier, sol->distances);
+                // swap pointers
+                vertex_set* tmp = frontier;
+                frontier = new_frontier;
+                new_frontier = tmp;
+            }
+            else {
+                // swap pointers
+                vertex_set* tmp = frontier;
+                frontier = new_frontier;
+                new_frontier = tmp;
+            }
 
         }
     }
