@@ -181,60 +181,6 @@ void bottom_up_step(
     }
     free(per_thread_storage);
 }
-
-
-
-
-
-
-
-
-    // int n_threads = 0;
-    // #pragma omp parallel
-    // {
-    //     #pragma omp single
-    //     n_threads = omp_get_num_threads();
-    // }
-
-    // int new_dist = distances[frontier->vertices[0]] + 1;
-    // int* per_thread_storage = (int*)malloc(sizeof(int)* g->num_nodes*n_threads);
-    // int* nCount = (int*)malloc(sizeof(int)* n_threads);
-
-    // #pragma omp parallel
-    // for(int iThread = 0; iThread < n_threads; iThread++){
-    //     nCount[iThread] = 0;
-    // }
-
-    // #pragma omp parallel for
-    // for (int node=0; node<g->num_nodes; node++) {
-    //     if(old_frontier_bool[node]){
-    //         int start_edge = g->incoming_starts[node];
-    //         int end_edge = (node == g->num_nodes - 1)
-    //                        ? g->num_edges
-    //                        : g->incoming_starts[node + 1];
-
-    //         // attempt to add all neighbors to the new frontier     
-    //         for (int neighbor=start_edge; neighbor<end_edge; neighbor++) {
-    //             if(!old_frontier_bool[g->incoming_edges[neighbor]]){
-    //                 int iThread = omp_get_thread_num();
-    //                 distances[node] = new_dist;
-    //                 per_thread_storage[iThread*g->num_nodes + nCount[iThread]] = node;
-    //                 nCount[iThread]++;
-    //                 break;
-    //             }
-    //         }
-    //     }
-    // }
-
-    // #pragma omp parallel for
-    // for(int iThread = 0; iThread < n_threads; iThread++){
-    //     int index = __sync_fetch_and_add(&new_frontier->count, nCount[iThread]);
-    //     for(int i = 0; i < nCount[iThread]; i++){
-    //         new_frontier->vertices[index + i] = per_thread_storage[iThread*g->num_nodes + i];
-    //     }
-    // }
-    // free(per_thread_storage);
-    // free(nCount);
 }
 
 
