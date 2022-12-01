@@ -254,7 +254,7 @@ void bfs_hybrid(Graph graph, solution* sol)
     //
     // You will need to implement the "hybrid" BFS here as
     // described in the handout.
-    bfs_bottom_up(Graph graph, solution* sol);
+    // bfs_bottom_up(graph, sol);
 
     // Initialize variables for the top down and the bottom up approach
     // generally bottom up approach is only advantageous when frontier
@@ -262,28 +262,60 @@ void bfs_hybrid(Graph graph, solution* sol)
     // high performance BFS will use top-down approach for beginning and end of search
     // use bottom up approach for middle steps when frontier is largest
     // start with the top down approach
-    // bool top_down = true;
+    bool top_down = true;
 
-    // const int num_nodes = graph->num_nodes;
-    // const int num_threads = omp_get_num_threads();
-    // const int thread_id = omp_get_thread_num();
+    const int num_nodes = graph->num_nodes;
+    const int num_threads = omp_get_num_threads();
+    const int thread_id = omp_get_thread_num();
     
-    // int frontier_count = -1;
+    // initialize variables specific to top down and bottom up
+    // top down
+    vertex_set list1;
+    vertex_set list2;
+    vertex_set_init(&list1, graph->num_nodes);
+    vertex_set_init(&list2, graph->num_nodes);
+    vertex_set* frontier = &list1;
+    vertex_set* new_frontier = &list2;
 
-    // // initialize variables specific to top down and bottom up
+    // initialize all nodes to NOT_VISITED
+    #pragma omp for
+    for (int i=0; i<graph->num_nodes; i++)
+        sol->distances[i] = NOT_VISITED_MARKER;
 
-    // while (frontier_count != 0) {
-    //     frontier_count = frontier->count;
-    //     if (top_down) {
-    //         // add code to run top down up here
+    int frontier_count = -1;
+    // setup frontier with the root node
+    frontier->count = 0;
+    frontier->vertices[frontier->count++] = ROOT_NODE_ID;
+    sol->distances[ROOT_NODE_ID] = 0;
 
-    //     }
-    //     else {
-    //         // add code to run bottom up here
-    //         //  we might not need to if top down approach is fast enough :)
-    //         ;
-    //     }
-    // }
+
+
+
+
+    while (frontier_count != 0) {
+        if (top_down) {
+
+            vertex_set_clear(new_frontier);
+
+            top_down_step(graph, frontier, new_frontier, sol->distances);
+
+            // swap pointers
+            vertex_set* tmp = frontier;
+            frontier = new_frontier;
+            new_frontier = tmp;
+            frontier_count = frontier->count;
+            // if (frontier_count > 0 && graph->num_nodes/frontier_count < 100) {
+            //     top_down = false;
+
+            // }
+
+        }
+        else {
+            // add code to run bottom up here
+            //  we might not need to if top down approach is fast enough :)
+            ;
+        }
+    }
     
 
 
