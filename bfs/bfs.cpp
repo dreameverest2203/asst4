@@ -288,22 +288,21 @@ void bfs_hybrid(Graph graph, solution* sol)
 
     while (frontier->count != 0) {
         if (top_down) {
-        vertex_set_clear(new_frontier);
+            vertex_set_clear(new_frontier);
 
-        top_down_step(graph, frontier, new_frontier, sol->distances);
+            top_down_step(graph, frontier, new_frontier, sol->distances);
 
-        // swap pointers
-        vertex_set* tmp = frontier;
-        frontier = new_frontier;
-        new_frontier = tmp;
-            if (frontier->count > 0 && graph->num_nodes/frontier->count < 50) {
-                top_down = false;
+            // swap pointers
+            vertex_set* tmp = frontier;
+            frontier = new_frontier;
+            new_frontier = tmp;
+            if (frontier->count > 0 && graph->num_nodes/frontier->count < 100) {
+                top_down = true;
             }
 
         }
         else {
             vertex_set_clear(new_frontier);
-
             bottom_up_step(graph, frontier, new_frontier, sol->distances, old_frontier_bool);
 
             #pragma omp parallel for
