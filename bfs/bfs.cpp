@@ -180,7 +180,6 @@ void bottom_up_step(
         new_frontier->count += nCount;
     }
     free(per_thread_storage);
-    return nCount;
 }
 }
 
@@ -228,7 +227,7 @@ void bfs_bottom_up(Graph graph, solution* sol)
 
         vertex_set_clear(new_frontier);
 
-        int node_num = bottom_up_step(graph, frontier, new_frontier, sol->distances, old_frontier_bool);
+        bottom_up_step(graph, frontier, new_frontier, sol->distances, old_frontier_bool);
 
         #pragma omp parallel for
         for (int i=0; i<new_frontier->count; i++){
@@ -264,70 +263,61 @@ void bfs_hybrid(Graph graph, solution* sol)
     // use bottom up approach for middle steps when frontier is largest
     // start with the top down approach
     bool top_down = true;
-
-    const int num_nodes = graph->num_nodes;
-    const int num_threads = omp_get_num_threads();
-    const int thread_id = omp_get_thread_num();
     
     // initialize variables specific to top down and bottom up
-    // top down
     vertex_set list1;
     vertex_set list2;
     vertex_set_init(&list1, graph->num_nodes);
     vertex_set_init(&list2, graph->num_nodes);
+
     vertex_set* frontier = &list1;
     vertex_set* new_frontier = &list2;
-    // bottom up specific
     bool* old_frontier_bool = (bool*)malloc(sizeof(bool) * graph->num_nodes);
 
     // initialize all nodes to NOT_VISITED
-    #pragma omp for
+    #pragma omp parallel for schedule(guided)
     for (int i=0; i<graph->num_nodes; i++){
         sol->distances[i] = NOT_VISITED_MARKER;
-        // from bottom up
         old_frontier_bool[i] = true;
     }
-    int frontier_count = -1;
+
     // setup frontier with the root node
-    frontier->count = 0;
     frontier->vertices[frontier->count++] = ROOT_NODE_ID;
     sol->distances[ROOT_NODE_ID] = 0;
-    // from bottom up
     old_frontier_bool[ROOT_NODE_ID] = false;
 
-    while (frontier_count != 0) {
+    while (frontier->count != 0) {
         if (top_down) {
+        vertex_set_clear(new_frontier);
 
-            vertex_set_clear(new_frontier);
+        top_down_step(graph, frontier, new_frontier, sol->distances);
 
-            top_down_step(graph, frontier, new_frontier, sol->distances);
-
-            // swap pointers
-            vertex_set* tmp = frontier;
-            frontier = new_frontier;
-            new_frontier = tmp;
-            frontier_count = frontier->count;
-            if (frontier_count > 0 && graph->num_nodes/frontier_count < 50) {
+        // swap pointers
+        vertex_set* tmp = frontier;
+        frontier = new_frontier;
+        new_frontier = tmp;
+            if (frontier->count > 0 && graph->num_nodes/frontier->count < 50) {
                 top_down = false;
             }
 
         }
         else {
-            // add code to run bottom up here
-            //  we might not need to if top down approach is fast enough :) -> we do
             vertex_set_clear(new_frontier);
-            node_num = bottom_up_step(graph, frontier, new_frontier, sol->distances, old_frontier_bool);
+
+            bottom_up_step(graph, frontier, new_frontier, sol->distances, old_frontier_bool);
+
             #pragma omp parallel for
             for (int i=0; i<new_frontier->count; i++){
                 old_frontier_bool[new_frontier->vertices[i]] = false;
             }
+
+            // swap pointers
             vertex_set* tmp = frontier;
             frontier = new_frontier;
             new_frontier = tmp;
             // adjust the number maybe
-            if (node_num > 0 ** graph->num_nodes/frontier_count > 200) {
+            if (frontier->count > 0 && graph->num_nodes/frontier->count > 200) {
                 top_down = true;
-                frontier_count = frontier->count;
             }
 
         }
