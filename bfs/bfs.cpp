@@ -254,4 +254,55 @@ void bfs_hybrid(Graph graph, solution* sol)
     //
     // You will need to implement the "hybrid" BFS here as
     // described in the handout.
+    vertex_set list1;
+    vertex_set list2;
+    vertex_set_init(&list1, graph->num_nodes);
+    vertex_set_init(&list2, graph->num_nodes);
+
+    vertex_set* frontier = &list1;
+    vertex_set* new_frontier = &list2;
+    bool* node_unvisited = (bool*)malloc(sizeof(bool) * graph->num_nodes);
+
+    // initialize all nodes to NOT_VISITED
+    #pragma omp parallel for
+    for (int i=0; i<graph->num_nodes; i++){
+        sol->distances[i] = NOT_VISITED_MARKER;
+        node_unvisited[i] = true;
+    }
+
+    // setup frontier with the root node
+    frontier->vertices[frontier->count++] = ROOT_NODE_ID;
+    sol->distances[ROOT_NODE_ID] = 0;
+    node_unvisited[ROOT_NODE_ID] = false;
+    int remaining_nodes = graph->num_nodes - 1;
+
+    while (frontier->count != 0) {
+
+#ifdef VERBOSE
+        double start_time = CycleTimer::currentSeconds();
+#endif
+
+        vertex_set_clear(new_frontier);
+        if(remaining_nodes*0.1 < frontier->count) bottom_up_step(graph, frontier, new_frontier, sol->distances, node_unvisited);
+        else top_down_step(graph, frontier, new_frontier, sol->distances);    
+
+        #pragma omp parallel for
+        for (int i=0; i<new_frontier->count; i++){
+            node_unvisited[new_frontier->vertices[i]] = false;
+        }
+
+#ifdef VERBOSE
+    double end_time = CycleTimer::currentSeconds();
+    printf("frontier=%-10d %.4f sec\n", frontier->count, end_time - start_time);
+#endif
+
+        // swap pointers
+        vertex_set* tmp = frontier;
+        frontier = new_frontier;
+        new_frontier = tmp;
+        remaining_nodes -= new_frontier->count;
+    }
+
+    free(node_unvisited);
+
 }
